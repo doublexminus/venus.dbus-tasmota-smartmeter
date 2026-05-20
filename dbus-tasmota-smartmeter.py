@@ -70,7 +70,7 @@ class DbusSmartmeterService:
   
     try:
       meter_url = "http://192.168.XXX.XXX/cm?cmnd=status%2010"
-      meter_r = requests.get(url=meter_url) # request data from the Tasmota Smartmeter
+      meter_r = requests.get(url=meter_url, timeout=5) # request data from the Tasmota Smartmeter
       meter_data = meter_r.json() # convert JSON data
       #meter_consumption = meter_data['StatusSNS']['MT681']['DJ_TPWRCURR']['DJ_TPWRIN']['DJ_TPWROUT']
       #send data to DBus
@@ -107,7 +107,13 @@ class DbusSmartmeterService:
       self._lastUpdate = time.time()              
     except Exception as e:
       logging.critical('Error at %s', '_update', exc_info=e)
-       
+
+     # deliver 0 if script could not get any value from tasmota to avoid victron to use old value instead
+      self._dbusservice['/Ac/Power'] = 0
+      self._dbusservice['/Ac/Current'] = 0
+      self._dbusservice['/Ac/L1/Voltage'] = 230
+      self._dbusservice['/Ac/L1/Current'] = 0
+      self._dbusservice['/Ac/L1/Power'] = 0
      # return true, otherwise add_timeout will be removed from GObject - see docs http://library.isr.ist.utl.pt/docs/pygtk2reference/gobject-functions.html#function-gobject--timeout-add
     return True
  
